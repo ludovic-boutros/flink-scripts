@@ -1,0 +1,14 @@
+# Ignore actual credentials file
+*.properties
+
+# Ignore any other sensitive files
+*.key
+*.secret
+*_secret*
+*_credentials*
+
+# Keep template files
+!*.template
+!*.example
+
+.claude
