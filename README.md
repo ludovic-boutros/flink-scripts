@@ -298,6 +298,7 @@ The script includes:
    # Ensure execution service account has:
    # - FlinkDeveloper role in environment
    # - Read/write access to relevant topics
+   # - Flink Transaction role
    # - Schema registry access (if using schemas)
    ```
 
