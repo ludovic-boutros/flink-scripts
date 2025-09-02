@@ -8,6 +8,10 @@ This directory contains bash scripts for deploying and managing Flink SQL statem
 - `jq` for JSON processing
 - Valid Confluent Cloud API credentials
 
+# Privilege model
+
+![Privilege Model](images/privilege-model.png)
+
 ## Setup
 
 1. **Configure credentials**: 
@@ -36,17 +40,18 @@ This directory contains bash scripts for deploying and managing Flink SQL statem
    | `FlinkAdmin` | All statements | ANY statement in environment | Cleans ALL non-running statements | Team/shared environments |
    | `FlinkDeveloper` | Own statements | Only statements created by this service account | Cleans ONLY own statements | Individual/isolated use |
 
-   - **Alternative**: `FlinkAdmin` for shared/team environments
    - **Recommended**: `FlinkDeveloper` for individual developer use (more restrictive)
+   - **Alternative**: `FlinkAdmin` for shared/team environments
    - **Must be**: Flink / Cloud API Key (not Cluster API Key)
    - **Used for**: API operations via this script
+
+   - **Assigner role**: Assigner role to manage the execution service account 
 
    ### Execution Service Account (Data Plane) 
    Create a separate service account for statement execution:
    - **Required Permissions** (following least-privilege principle):
-     - **Base Layer**: `FlinkDeveloper` role in the environment
-     - **Data Access Layer**: Read/write access to specific topics and schema registry
-     - **Table Management Layer** (if needed): Permissions to create/alter tables
+     - **Data Access**: Read/write access to specific topics and schemas
+     - **Transaction**: Read/Write on transaction prefix: _confluent_flink_
    - **Permission Inheritance**: "Statements inherit all permissions from the principal that runs them"
    - **Used as**: The principal (`sa-xxxxxx`) that executes your Flink SQL statements
 
@@ -144,37 +149,6 @@ Use the unified `flink-statement.sh` script for all operations:
 ```
 **Offset Information**: Shows the last processed position in each source topic. Particularly useful for STOPPED statements to understand where processing was interrupted and for resuming data processing from the correct position.
 
-### Consumer Group Offsets Tool
-
-Use the `consumer-group-offsets.sh` script to retrieve committed offsets from consumer groups and format them for Flink statements:
-
-```bash
-./consumer-group-offsets.sh <action> [options]
-```
-
-#### Get consumer group offsets
-```bash
-# Get offsets for specific consumer group (with Flink format)
-./consumer-group-offsets.sh offsets my-consumer-group
-
-# List all consumer groups in the cluster
-./consumer-group-offsets.sh list
-
-# Show usage help
-./consumer-group-offsets.sh help
-```
-
-**Key Features:**
-- **Offset Retrieval**: Gets committed offsets from any consumer group
-- **Flink Formatting**: Automatically formats offsets for Flink SQL `CREATE TABLE` statements
-- **Multiple Formats**: Shows both human-readable and Flink-specific configuration
-- **Topic Grouping**: Groups offsets by topic with proper partition mapping
-
-**Requirements:**
-- Requires **Kafka API Keys** (cluster-scoped) in addition to management API keys
-- Requires **dedicated cluster** (consumer group APIs not available on basic/standard clusters)
-- Add `kafka_api_key`, `kafka_api_secret`, `kafka_rest_endpoint`, and `cluster_id` to credentials.properties
-
 **Clean Operation Features:**
 - **Smart Filtering**: Target specific principals or status types
 - **Interactive Mode**: Shows what will be deleted and asks for confirmation
@@ -233,6 +207,36 @@ Both `list` and `clean` operations support powerful filtering:
 # Clean failed statements created by specific user
 ./flink-statement.sh clean --principal u-xyz789 --status FAILED --force
 ```
+
+### Consumer Group Offsets Tool
+
+Use the `consumer-group-offsets.sh` script to retrieve committed offsets from consumer groups and format them for Flink statements:
+
+```bash
+./consumer-group-offsets.sh <action> [options]
+```
+
+#### Get consumer group offsets
+```bash
+# Get offsets for specific consumer group (with Flink format)
+./consumer-group-offsets.sh offsets my-consumer-group
+
+# List all consumer groups in the cluster
+./consumer-group-offsets.sh list
+
+# Show usage help
+./consumer-group-offsets.sh help
+```
+
+**Key Features:**
+- **Offset Retrieval**: Gets committed offsets from any consumer group
+- **Flink Formatting**: Automatically formats offsets for Flink SQL statements
+- **Multiple Formats**: Shows both human-readable and Flink-specific configuration
+- **Topic Grouping**: Groups offsets by topic with proper partition mapping
+
+**Requirements:**
+- Requires **Kafka API Keys** (cluster-scoped) in addition to management API keys
+- Add `kafka_api_key`, `kafka_api_secret`, `kafka_rest_endpoint`, and `cluster_id` to credentials.properties
 
 ## Files
 

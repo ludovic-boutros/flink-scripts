@@ -154,7 +154,7 @@ get_committed_offsets() {
     
     # Convert REST API URL to bootstrap servers format
     local bootstrap_servers
-    bootstrap_servers=$(echo "$kafka_rest_endpoint" | sed 's|https://||' | sed 's|http://||'):9092
+    bootstrap_servers=$(echo "$kafka_rest_endpoint" | sed 's|https://||' | sed 's|http://||' | sed 's|:443||'):9092
     
     # Create a temporary properties file for kafka-consumer-groups
     local temp_config=$(mktemp)
@@ -176,10 +176,7 @@ EOF
         else
             echo "❌ kafka-consumer-groups command not found"
             echo ""
-            echo "💡 Please install Kafka tools:"
-            echo "  • macOS: brew install kafka"
-            echo "  • Ubuntu/Debian: sudo apt install kafka"
-            echo "  • Or download from: https://kafka.apache.org/downloads"
+            echo "💡 Please install Kafka tools: https://docs.confluent.io/platform/current/installation/overview.html#manual-installation"
             echo ""
             echo "🔧 Alternative: Use Confluent CLI instead:"
             echo "  confluent kafka consumer group describe $group_name"
@@ -287,23 +284,11 @@ format_for_flink() {
         done <<< "$topic_offsets"
         
         # Output Flink-compatible format
-        echo "-- For Flink Kafka connector:"
+        echo "-- For Flink compatible format:"
         echo "'scan.startup.mode' = 'specific-offsets',"
         echo "'scan.startup.specific-offsets' = '$topic;$partition_map',"
         echo ""
     done
-    
-    echo "-- Example Flink table creation with offsets:"
-    echo "CREATE TABLE my_kafka_table ("
-    echo "  -- Add your table schema here"
-    echo "  key STRING,"
-    echo "  value STRING"
-    echo ") WITH ("
-    echo "  'connector' = 'kafka',"
-    echo "  'topic' = 'your-topic-name',"
-    echo "  'properties.bootstrap.servers' = 'your-bootstrap-servers',"
-    echo "  'properties.group.id' = '$group_name',"
-    echo "  'scan.startup.mode' = 'specific-offsets',"
     
     # Show example for first topic
     local first_topic
@@ -392,7 +377,7 @@ format_for_flink_cli() {
         
         if [[ -n "$partition_map" ]]; then
             # Output Flink-compatible format
-            echo "-- For Flink Kafka connector:"
+            echo "-- For Flink statements:"
             echo "'scan.startup.mode' = 'specific-offsets',"
             echo "'scan.startup.specific-offsets' = '$partition_map',"
         else
@@ -480,7 +465,7 @@ list_consumer_groups() {
     
     # Convert REST API URL to bootstrap servers format
     local bootstrap_servers
-    bootstrap_servers=$(echo "$kafka_rest_endpoint" | sed 's|https://||' | sed 's|http://||'):9092
+    bootstrap_servers=$(echo "$kafka_rest_endpoint" | sed 's|https://||' | sed 's|http://||' | sed 's|:443||'):9092
     
     # Create a temporary properties file
     local temp_config=$(mktemp)
@@ -499,10 +484,7 @@ EOF
         else
             echo "❌ kafka-consumer-groups command not found"
             echo ""
-            echo "💡 Please install Kafka tools:"
-            echo "  • macOS: brew install kafka"
-            echo "  • Ubuntu/Debian: sudo apt install kafka"
-            echo "  • Or download from: https://kafka.apache.org/downloads"
+            echo "💡 Please install Kafka tools: https://docs.confluent.io/platform/current/installation/overview.html#manual-installation"
             echo ""
             echo "🔧 Alternative: Use Confluent CLI:"
             echo "  confluent kafka consumer group list"
@@ -554,7 +536,7 @@ create_kafka_config() {
     # From: https://pkc-xxxxx.region.provider.confluent.cloud
     # To: pkc-xxxxx.region.provider.confluent.cloud:9092
     local bootstrap_servers
-    bootstrap_servers=$(echo "$kafka_rest_endpoint" | sed 's|https://||' | sed 's|http://||'):9092
+    bootstrap_servers=$(echo "$kafka_rest_endpoint" | sed 's|https://||' | sed 's|http://||' | sed 's|:443||'):9092
     
     echo "🔄 Converting REST endpoint to bootstrap servers:"
     echo "   REST API: $kafka_rest_endpoint"
@@ -617,20 +599,15 @@ Examples:
   $0 list                              # List all consumer groups
   
 Note: 
-- Requires kafka-consumer-groups CLI tool (install with: brew install kafka)
+- Requires kafka-consumer-groups CLI tool (install with: https://docs.confluent.io/confluent-cli/current/overview.html)
 - Uses Kafka API keys and kafka_rest_endpoint from credentials.properties
-- Works with all Confluent Cloud cluster types (Basic, Standard, Dedicated)
 - Output includes both human-readable format and Flink-specific configuration
 
-The script generates Flink-compatible offset configuration that can be used in:
-- Flink SQL CREATE TABLE statements
-- Flink Kafka connector properties
-- Specific offset startup mode configuration
+The script generates Flink-compatible offset configuration.
 
 Workflow:
-1. First run: ./consumer-group-offsets.sh create-config
-2. Then run: ./consumer-group-offsets.sh list (to see available groups)
-3. Finally: ./consumer-group-offsets.sh offsets <group-name>
+1. Then run: ./consumer-group-offsets.sh list (to see available groups)
+2. Finally: ./consumer-group-offsets.sh offsets <group-name>
 EOF
 }
 
